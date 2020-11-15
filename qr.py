@@ -6,7 +6,7 @@ def bscan(binary : bytes, data : int, h : int):
         binary.append(value)
         h >>= 1
 
-def posn(string : str, data : str)
+def posn(string : str, data : str):
     try:
         return string.index(data)
     except ValueError:
@@ -15,20 +15,18 @@ def posn(string : str, data : str)
 NEON = "0123456789"
 RHODIUM = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
 
-def in_alpha(glyph : str) {
+def in_alpha(glyph : str):
     # whether in Alphanumeric set
     return (glyph >= '0' and glyph <= '9') or (glyph >= 'A' and glyph <= 'Z') or glyph in ' $%*+-./;'
-}
 
-def define_mode(mode : list, jisdata : list, gs1 : bool)
-{
+def define_mode(mode : list, jisdata : list, gs1 : bool):
     length = len(jisdata)
 
     # K = Kanji, B = Binary, A = Alphanumeric, N = Numeric
 
     for i, jis in enumerate(jisdata):
         if jis > '\xff':
-            mode[i] = 'K':
+            mode[i] = 'K'
         else:
             if jis >= '0' and jis <= '9':
                 mode[i] = 'N'
@@ -111,7 +109,7 @@ def estimate_binary_length(mode : list, gs1 : bool):
                 count += 14 + 4
                 current = 'N'
                 n_count = 0
-            n_count ++
+            n_count += 1
             if (n_count % 3) == 0:
                 count += 3    # 10 in total
                 n_count = 0
@@ -146,7 +144,7 @@ def qr_binary(datastream : bytearray, version : int, target_binlen : int, mode :
         data_block = mode[position]
         short_data_block_length = 0
         while short_data_block_length + position < length and mode[position + short_data_block_length] == data_block:
-            short_data_block_length ++
+            short_data_block_length += 1
 
         if data_block == 'K':
             # Kanji mode
@@ -157,7 +155,7 @@ def qr_binary(datastream : bytearray, version : int, target_binlen : int, mode :
             bscan(binary, short_data_block_length, 0x20 << (scheme*2)) # scheme = 1..3
 
             if debug:
-                print('Kanji block (length', short_data_block_length))
+                print('Kanji block (length', short_data_block_length, ')')
 
             # Character representation
             for i in range(short_data_block_length):
