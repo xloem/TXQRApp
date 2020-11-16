@@ -11,7 +11,6 @@ class TXQRApp(App):
         if platform == 'android':
             from android.permissions import request_permissions, Permission
             print(request_permissions([Permission.CAMERA]))
-            print(request_permissions(Permission.CAMERA))
         Camera(index = 0, play = True)
 
 if __name__ == '__main__':
