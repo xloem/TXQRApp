@@ -420,11 +420,11 @@ class TXQRApp(App):
             length += len(data)
         print(length)
 
-    def ensure_permission(self, permission):
+    def ensure_permission(self, *permissions):
         if platform != 'android':
             return
         from android.permissions import request_permissions, Permission
-        return request_permission(getattr(Permission, permission))
+        return request_permissions([getattr(Permission, permission) for permission in permissions])
 
 if __name__ == '__main__':
     app = TXQRApp()
