@@ -21,20 +21,22 @@ from kivy.uix.settings import SettingsWithNoMenu as Settings
 from kivy.uix.widget import Widget
 
 import base64
-import fountaincoding
 import io
 import math
 import os
 import random
+
+import fountaincoding
+import lt
+import PIL.Image
 import pyzint
 import zbarlight
-import PIL.Image
 
 class QRCode(Image):
     data = ListProperty()
     error = BoundedNumericProperty(0.5, min=0, max=1)
     borderwidth = BoundedNumericProperty(10, min=0)
-    codestandard = StringProperty('QRCODE')
+    imagery = StringProperty('QRCODE')
 
     def __init__(self, *args, **kwargs):
         #self.gfxtranslate = Translate()
@@ -73,7 +75,7 @@ class QRCode(Image):
         # TODO: provide interface settings of barcode, bordersize etc
 
         # borderwidth doesn't seem to do anything?  so we do borders manually
-        Barcode = getattr(pyzint.Barcode, self.codestandard)
+        Barcode = getattr(pyzint.Barcode, self.imagery)
         barcodes = (Barcode(data, option_1 = int(self.error * 4 + 1)) for data in data)
 
         images = (CoreImage(io.BytesIO(barcode.render_bmp()), ext='bmp') for barcode in barcodes)
@@ -146,9 +148,9 @@ class TXQRApp(App):
             'duration': 300,
             'error': '33%',
             'base64': 1,
-            'codestandard': 'QRCODE',
+            'imagery': 'QRCODE',
             'multicolor': 0,
-            'fountaincoding': 1,
+            'coding': 'TXQR-Android',
             'extra': 10
         })
         # todo: organize config and settings entries to be in the same order, for clarity
@@ -194,17 +196,18 @@ class TXQRApp(App):
                 "key": "multicolor"
             },{
                 "type": "options",
-                "title": "Code Standard",
+                "title": "Imagery",
                 "desc": "What kind of 2D barcodes to display",
                 "section": "settings",
-                "key": "codestandard",
+                "key": "imagery",
                 "options": ["QRCODE", "AZTEC"]
             },{
-                "type": "bool",
+                "type": "options",
                 "title": "Fountain Coding",
-                "desc": "Whether to encode data using txqr fountain coding",
+                "desc": "How to encode data",
                 "section": "settings",
-                "key": "fountaincoding"
+                "key": "coding",
+                "options": ["QRStreamRaw", "TXQR-Android", "LT-code"]
             },{
                 "type": "numeric",
                 "title": "Extra",
@@ -224,7 +227,7 @@ class TXQRApp(App):
         pagelayout.add_widget(self.qrwidget)
         self.qrwidget.borderwidth = self.config.getint('settings', 'borderwidth')
         self.on_config_change(self.config, 'settings', 'error', self.config.get('settings', 'error'))
-        self.qrwidget.codestandard = self.config.get('settings', 'codestandard')
+        self.qrwidget.imagery = self.config.get('settings', 'imagery')
 
         self.interval = Clock.schedule_interval(self.on_interval, float(self.config.get('settings', 'duration')) / 1000)
         self.iterdata = None
@@ -241,13 +244,21 @@ class TXQRApp(App):
     def on_file_submit(self, chooser, selection, touch):
         if len(selection) == 0:
             return
+
         blocksize = self.config.getint('settings', 'blocksize')
-        with open(selection[0], 'rb') as file:
-            if self.config.getint('settings', 'fountaincoding'):
-                data, score, compressed, compressed_data = fountaincoding.encode_and_compress(file, blocksize, extra = self.config.getint('settings', 'extra'))
-            else:
-                data = file.read()
-                data = [data[i:i+blocksize] for i in range(0, len(data), blocksize)]
+        file = open(selection[0], 'rb')
+
+        coding = self.config.get('settings', 'coding')
+        if coding == 'QRStreamRaw':
+            data = file.read()
+            data = [data[i:i+blocksize] for i in range(0, len(data), blocksize)]
+        elif coding == 'TXQR-Android':
+            data, score, compressed, compressed_data = fountaincoding.encode_and_compress(file, blocksize, extra = self.config.getint('settings', 'extra'))
+        elif coding == 'LT-code':
+            data = lt.encode.encoder(file, blocksize )
+        else:
+            self.config.set('settings', 'coding', 'QRStreamRaw') # to recover after error
+
         self.data = data
         self.iterdata = iter(data)
         self.pagelayout.page = 1
@@ -257,11 +268,14 @@ class TXQRApp(App):
             self.qrwidget.borderwidth = int(value)
         elif key == 'error':
             self.qrwidget.error = float(value[:value.find('%')])/100
-        elif key == 'codestandard':
-            self.qrwidget.codestandard = value
+        elif key == 'imagery':
+            self.qrwidget.imagery = value
         elif key == 'duration':
             self.interval.cancel()
             self.interval = Clock.schedule_interval(self.on_interval, float(value) / 1000)
+        elif key == 'coding':
+            self.on_file_submit(self.filechooser, self.filechooser.selection, None)
+
 
     def on_interval(self, clock):
         if self.iterdata is None:
