@@ -360,10 +360,10 @@ class TXQRApp(App):
         print(cameraheader.content.index, cameraheader.content._camera)
         cameraheader.content.index = cameraheader.content.index
         print(cameraheader.content.index, cameraheader.content._camera)
-        cameraheader.content._camera.bind(on_texture = self.on_update_camera)
+        #cameraheader.content._camera.bind(on_texture = self.on_update_camera)
     def on_leave_camera(self, cameraheader):
         camera = cameraheader.content
-        camera._camera.unbind(on_texture = self.on_update_camera)
+        #camera._camera.unbind(on_texture = self.on_update_camera)
         camera.play = False
         if self.writefile is not None:
             if self.ltdecoder is not None:
