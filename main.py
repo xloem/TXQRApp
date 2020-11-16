@@ -236,6 +236,12 @@ class TXQRApp(App):
 
         self.iterdata = None
 
+        self.cameraheaders = (
+            TabbedPanelHeader(text = 'Camera 1'),#, content = Camera(index = 0, play = False)),
+            TabbedPanelHeader(text = 'Camera 2')#, content = Camera(index = 1, play = False))
+        )
+        for cameraheader in self.cameraheaders:
+            tabbedpanel.add_widget(cameraheader)
         #self.camera = Camera(index=1)
         #self.camera._camera.bind(on_texture = self.on_camtexture)
         #self.camera._camera.widget = self.camera
@@ -280,14 +286,18 @@ class TXQRApp(App):
     def on_current_tab(self, panel, header):
         print('ON_CURRENT_TAB')
         if self.lasttab is self.qrwidgetheader:
-            self.on_leave_sending(header)
+            self.on_leave_sending(self.lasttab)
+        elif self.lasttab in self.cameraheaders:
+            self.on_leave_camera(self.lasttab)
         self.lasttab = header
         if self.lasttab is self.qrwidgetheader:
-            self.on_enter_sending(header)
+            self.on_enter_sending(self.lasttab)
+        elif self.lasttab in self.cameraheaders:
+            self.on_enter_camera(self.lasttab)
 
-    def on_enter_sending(self, header):
+    def on_enter_sending(self, qrcodeheader):
         self.interval = Clock.schedule_interval(self.on_update_sending, float(self.config.get('settings', 'duration')) / 1000)
-    def on_leave_sending(self, header):
+    def on_leave_sending(self, qrcodeheader):
         self.interval.cancel()
     def on_update_sending(self, clock):
         if self.iterdata is None:
@@ -305,9 +315,40 @@ class TXQRApp(App):
             datas.append(data)
         self.qrwidget.data = datas
 
-    def on_camtexture(self, camera):
-        image = PIL.Image.frombytes('RGBA', camera.texture.size, camera.texture.pixels)
+    def on_enter_camera(self, cameraheader):
+        if cameraheader.content is None:
+            index = int(cameraheader.text[-1]) - 1
+
+            # the camera is not created until used because it can
+            # begin reading from the user's hardware in the constructor,
+            # and they might not be planning to use it
+
+            cameraheader.content = Camera(index = index, play = True)
+
+            # this hack works around a control flow issue with adding
+            # a widget inside the on_content event handler, where it
+            # is replaced with the previous content
+            # see https://github.com/kivy/kivy/issues/7221
+            # this rest of this if block should likely be removed if that issue is closed
+            self.tabbedpanel.clear_widgets()
+            self.tabbedpanel.add_widget(cameraheader.content)
+            correct_clear_widgets = self.tabbedpanel.clear_widgets
+            def restore_clear_widgets():
+                self.tabbedpanel.clear_widgets = correct_clear_widgets
+            self.tabbedpanel.clear_widgets = restore_clear_widgets
+        else:
+            cameraheader.content.play = True
+        cameraheader.content._camera.bind(on_texture = self.on_update_camera)
+    def on_leave_camera(self, cameraheader):
+        camera = cameraheader.content
+        camera._camera.unbind(on_texture = self.on_update_camera)
+        camera.play = False
+
+    def on_update_camera(self, _camera):
+        image = PIL.Image.frombytes('RGBA', _camera.texture.size, _camera.texture.pixels)
         codes = zbarlight.scan_codes(['qrcode'], image)
+        # todo: display datarate or something
+        print(codes)
         #for bytes in codes:
         
 
