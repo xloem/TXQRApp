@@ -24,6 +24,9 @@ jobs:
           path: master
           submodules: true
 
+      - name: Install openssh-client
+        run: sudo apt-get install openssh-client
+
       - name: Set numeric version
         id: settings
         run: echo "::set-output name=numeric_version::$(date +%Y%m%d%H%M%S)"
