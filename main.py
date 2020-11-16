@@ -4,6 +4,7 @@ from kivy.app import App
 
 from kivy.clock import Clock
 
+from kivy.config import ConfigParser
 from kivy.core.image import Image as CoreImage
 
 from kivy.graphics import Color, Scale, Rectangle, PushMatrix, PopMatrix, Translate
@@ -12,12 +13,11 @@ from kivy.graphics.transformation import Matrix
 
 from kivy.properties import ObjectProperty, ListProperty, BoundedNumericProperty
 
-from kivy.uix.button import Button
-
 from kivy.uix.pagelayout import PageLayout
 from kivy.uix.camera import Camera
 from kivy.uix.filechooser import FileChooserListView as FileChooser
 from kivy.uix.image import Image
+from kivy.uix.settings import SettingsWithNoMenu as Settings
 from kivy.uix.widget import Widget
 
 import base64
@@ -30,8 +30,8 @@ import pyzint
 
 class QRCode(Image):
     data = ListProperty()
-    ec = BoundedNumericProperty(0.5, min=0, max=1)
-    border_width = BoundedNumericProperty(10, min=0)
+    error = BoundedNumericProperty(0.5, min=0, max=1)
+    borderwidth = BoundedNumericProperty(10, min=0)
 
     def __init__(self, *args, **kwargs):
         #self.gfxtranslate = Translate()
@@ -69,13 +69,13 @@ class QRCode(Image):
 
         # TODO: provide interface settings of barcode, bordersize etc
 
-        # border_width doesn't seem to do anything?  so we do borders manually
-        barcodes = (pyzint.Barcode.QRCODE(data, option_1 = int(self.ec * 4 + 1)) for data in data)
+        # borderwidth doesn't seem to do anything?  so we do borders manually
+        barcodes = (pyzint.Barcode.QRCODE(data, option_1 = int(self.error * 4 + 1)) for data in data)
 
         images = (CoreImage(io.BytesIO(barcode.render_bmp()), ext='bmp') for barcode in barcodes)
         sizepixels = [(image.texture.size, image.texture.pixels) for image in images]
         size = max((max(size) for size, pixels in sizepixels))
-        outersize = size + self.border_width * 2
+        outersize = size + self.borderwidth * 2
         if outersize >= self.rectangle.texture.width:
             texsize = 1 << (int(outersize) - 1).bit_length()
             self.rectangle.texture = Texture.create(size=(texsize,texsize))
@@ -99,7 +99,7 @@ class QRCode(Image):
                     values.append((values[0] + values[1]) // 2)
                 newpixels[offset:offset+len(values)] = values
 
-        self.rectangle.texture.blit_buffer(newpixels, pos = (self.border_width, self.border_width), size = (size,size), colorfmt = 'rgb')
+        self.rectangle.texture.blit_buffer(newpixels, pos = (self.borderwidth, self.borderwidth), size = (size,size), colorfmt = 'rgb')
         self.rectangle.texture = self.rectangle.texture
 
         ratio = outersize / self.rectangle.texture.width
@@ -133,24 +133,84 @@ class QRCode(Image):
         #    PopMatrix()
 
 class TXQRApp(App):
-    def build(self):
-        pagelayout = PageLayout()#orientation = 'vertical')
 
-        self.duration = 300
-        self.blocksize = 512
-        self.extra = 10
-        self.error = 2
-        self.base64 = True
-        self.multicolor = False
+    def build_config(self, config):
+        config.setdefaults('settings', {
+            'blocksize': 512,
+            'borderwidth': 10,
+            'duration': 300,
+            'error': '33%',
+            'base64': 1,
+            'multicolor': 0,
+            'fountaincoding': 1,
+            'extra': 10
+        })
+        # todo: organize config and settings entries to be in the same order, for clarity
+        
+    def build_settings(self, settings):
+        settings.add_json_panel('QR Encoding Settings', self.config, data = 
+            """[{
+                "type": "numeric",
+                "title": "Chunk Size",
+                "desc": "Size of chunks data is broken into",
+                "section": "settings",
+                "key": "blocksize"
+            },{
+                "type": "numeric",
+                "title": "Border Width",
+                "desc": "Number of cells used for the border",
+                "section": "settings",
+                "key": "borderwidth"
+            },{
+                "type": "numeric",
+                "title": "Duration",
+                "desc": "The duration of each individual frame",
+                "section": "settings",
+                "key": "duration"
+            },{
+                "type": "options",
+                "title": "Error",
+                "desc": "The degree of additional error correction",
+                "section": "settings",
+                "key": "error",
+                "options": ["0%", "33%", "66%", "100%"]
+            },{
+                "type": "bool",
+                "title": "Base64",
+                "desc": "Whether to base64 encode the data as TXQR does",
+                "section": "settings",
+                "key": "base64"
+            },{
+                "type": "bool",
+                "title": "Multicolor",
+                "desc": "Whether to display 3-channel colored QRs",
+                "section": "settings",
+                "key": "multicolor"
+            },{
+                "type": "bool",
+                "title": "Fountain Coding",
+                "desc": "Whether to encode data using txqr fountain coding",
+                "section": "settings",
+                "key": "fountaincoding"
+            },{
+                "type": "numeric",
+                "title": "Extra",
+                "desc": "The number of extra QR codes to generate",
+                "section": "settings",
+                "key": "extra"
+            }]""")
+
+    def build(self):
+
+        pagelayout = PageLayout()#orientation = 'vertical')
 
         self.filechooser = FileChooser(path = os.path.abspath('.'), on_submit = self.on_file_submit)
         pagelayout.add_widget(self.filechooser)
 
-        self.interval = Clock.schedule_interval(self.on_interval, self.duration / 1000)
-
         self.qrwidget = QRCode()
         pagelayout.add_widget(self.qrwidget)
-        #pagelayout.add_widget(Button())
+
+        self.interval = Clock.schedule_interval(self.on_interval, float(self.config.get('settings', 'duration')) / 1000)
 
         self.iterdata = None
 
@@ -159,16 +219,32 @@ class TXQRApp(App):
         return pagelayout
 
     def on_file_submit(self, chooser, selection, touch):
+        if len(selection) == 0:
+            return
+        blocksize = self.config.getint('settings', 'blocksize')
         with open(selection[0], 'rb') as file:
-            data, score, compressed, compressed_data = fountaincoding.encode_and_compress(file, self.blocksize, extra = math.floor(self.extra))
+            if self.config.getint('settings', 'fountaincoding'):
+                data, score, compressed, compressed_data = fountaincoding.encode_and_compress(file, blocksize, extra = self.config.getint('settings', 'extra'))
+            else:
+                data = file.read()
+                data = [data[i:i+blocksize] for i in range(0, len(data), blocksize)]
         self.data = data
         self.iterdata = iter(data)
         self.pagelayout.page = 1
 
+    def on_config_change(self, config, section, key, value):
+        if key == 'borderwidth':
+            self.qrcode.borderwidth = int(value)
+        elif key == 'error':
+            self.qrcode.error = float(value[:value.find('%')])/100
+        elif key == 'duration':
+            self.interval.cancel()
+            self.interval = Clock.schedule_interval(self.on_interval, float(value) / 1000)
+
     def on_interval(self, clock):
         if self.iterdata is None:
             return
-        count = 3 if self.multicolor else 1
+        count = 3 if self.config.getint('settings', 'multicolor') else 1
         datas = []
         for index in range(count):
             try:
@@ -176,7 +252,7 @@ class TXQRApp(App):
             except StopIteration:
                 self.iterdata = iter(self.data)
                 data = next(self.iterdata)
-            if self.base64:
+            if self.config.getint('settings', 'base64'):
                 data = base64.b64encode(data)
             datas.append(data)
         self.qrwidget.data = datas
