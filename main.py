@@ -345,7 +345,9 @@ class TXQRApp(App):
             # begin reading from the user's hardware in the constructor,
             # and they might not be planning to use it
 
+            print('CAMERA PERMISSION')
             self.ensure_permission('CAMERA')
+            peinr('CAMERA CONSTRUCTION')
             cameraheader.content = Camera(index = index, play = True)
 
             # this hack works around a control flow issue with adding
@@ -421,9 +423,11 @@ class TXQRApp(App):
         print(length)
 
     def ensure_permission(self, *permissions):
+        print('PLATFORM', platform)
         if platform != 'android':
             return
         from android.permissions import request_permissions, Permission
+        print('REQUESTING PERMISSION')
         return request_permissions([getattr(Permission, permission) for permission in permissions])
 
 if __name__ == '__main__':
