@@ -81,11 +81,12 @@ class QRCode(Image):
             self.rectangle.texture = Texture.create(size=(texsize,texsize))
         #self.rectangle.texture.blit_buffer(sizepixels[0][1], size=sizepixels[0][0])
         #return
-        newpixels = bytearray(size*size*3)
+        newpixels = bytearray(b'\xff\xff\xff') * outersize*outersize
+        startoffset = (self.borderwidth + outersize * self.borderwidth) * 3
         for y in range(size):
             for x in range(size):
                 values = [0] * min(len(sizepixels),3)
-                offset = (x+y*size)*3
+                offset = startoffset + (x + y * outersize) * 3
                 for index, sizepixel in enumerate(sizepixels):
                     if index > len(values):
                         raise AssertionError('too many images')
@@ -99,7 +100,7 @@ class QRCode(Image):
                     values.append((values[0] + values[1]) // 2)
                 newpixels[offset:offset+len(values)] = values
 
-        self.rectangle.texture.blit_buffer(newpixels, pos = (self.borderwidth, self.borderwidth), size = (size,size), colorfmt = 'rgb')
+        self.rectangle.texture.blit_buffer(newpixels, size = (outersize,outersize), colorfmt = 'rgb')
         self.rectangle.texture = self.rectangle.texture
 
         ratio = outersize / self.rectangle.texture.width
