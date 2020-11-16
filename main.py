@@ -16,11 +16,12 @@ from kivy.properties import ObjectProperty, ListProperty, BoundedNumericProperty
 from kivy.uix.camera import Camera
 from kivy.uix.filechooser import FileChooserListView as FileChooser
 from kivy.uix.image import Image
-from kivy.uix.settings import SettingsWithNoMenu as Settings
+from kivy.uix.settings import SettingsWithNoMenu
 from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelHeader
 from kivy.uix.widget import Widget
 
 import base64
+import datetime
 import io
 import math
 import os
@@ -156,7 +157,7 @@ class TXQRApp(App):
         # todo: organize config and settings entries to be in the same order, for clarity
         
     def build_settings(self, settings):
-        settings.add_json_panel('QR Encoding Settings', self.config, data = 
+        settings.add_json_panel('Coding Settings', self.config, data = 
             """[{
                 "type": "numeric",
                 "title": "Chunk Size",
@@ -191,7 +192,7 @@ class TXQRApp(App):
             },{
                 "type": "bool",
                 "title": "Multicolor",
-                "desc": "Whether to display 3-channel colored images",
+                "desc": "Whether to display 3-channel colored images (no decoding support)",
                 "section": "settings",
                 "key": "multicolor"
             },{
@@ -204,7 +205,7 @@ class TXQRApp(App):
             },{
                 "type": "options",
                 "title": "Fountain Coding",
-                "desc": "How to encode data",
+                "desc": "How to encode data (TXQR-Android decoding not supported)",
                 "section": "settings",
                 "key": "coding",
                 "options": ["QRStreamRaw", "TXQR-Android", "LT-code"]
@@ -215,12 +216,13 @@ class TXQRApp(App):
                 "section": "settings",
                 "key": "extra"
             }]""")
+        self.settingsheader.content = settings
 
     def build(self):
 
         tabbedpanel = TabbedPanel(do_default_tab = False)
         tabbedpanel.bind(current_tab = self.on_current_tab)
-        self.lasttab = None
+        self.curtab = None
 
         self.filechooser = FileChooser(path = os.path.abspath('.'), on_submit = self.on_file_submit)
         self.filechooserheader = TabbedPanelHeader(text = 'Select file', content = self.filechooser)
@@ -234,7 +236,8 @@ class TXQRApp(App):
         self.qrwidgetheader = TabbedPanelHeader(text = 'Sending', content = self.qrwidget)
         tabbedpanel.add_widget(self.qrwidgetheader)
 
-        self.iterdata = None
+        self.readiter = None
+        self.writefile = None
 
         self.cameraheaders = (
             TabbedPanelHeader(text = 'Camera 1'),#, content = Camera(index = 0, play = False)),
@@ -247,9 +250,23 @@ class TXQRApp(App):
         #self.camera._camera.widget = self.camera
         #pagelayout.add_widget(self.camera)
 
+        self.settingsheader = TabbedPanelHeader(text = 'Settings', content = self._app_settings)
+        tabbedpanel.add_widget(self.settingsheader)
+
         self.tabbedpanel = tabbedpanel
 
+        self.settings_cls = SettingsWithNoMenu
+        # this seems clearer than doing the hack to make dynamic creation work in tabbedpanel
+        self._app_settings = self.create_settings()
+
         return tabbedpanel
+
+    def display_settings(self, settings):
+        self.tabbedpanel.switch_to(self.settingsheader)
+        return True
+
+    def close_settings(self, *args):
+        self.tabbedpanel.switch_to(self.lasttab)
 
     def on_file_submit(self, chooser, selection, touch):
         if len(selection) == 0:
@@ -269,8 +286,8 @@ class TXQRApp(App):
         else:
             self.config.set('settings', 'coding', 'QRStreamRaw') # to recover after error
 
-        self.data = data
-        self.iterdata = iter(data)
+        self.readdata = data
+        self.readiter = iter(self.readdata)
         self.tabbedpanel.switch_to(self.qrwidgetheader)
 
     def on_config_change(self, config, section, key, value):
@@ -284,32 +301,34 @@ class TXQRApp(App):
             self.on_file_submit(self.filechooser, self.filechooser.selection, None)
 
     def on_current_tab(self, panel, header):
-        print('ON_CURRENT_TAB')
+        self.lasttab = self.curtab
+        self.curtab = header
+
         if self.lasttab is self.qrwidgetheader:
             self.on_leave_sending(self.lasttab)
         elif self.lasttab in self.cameraheaders:
             self.on_leave_camera(self.lasttab)
-        self.lasttab = header
-        if self.lasttab is self.qrwidgetheader:
-            self.on_enter_sending(self.lasttab)
-        elif self.lasttab in self.cameraheaders:
-            self.on_enter_camera(self.lasttab)
+
+        if self.curtab is self.qrwidgetheader:
+            self.on_enter_sending(self.curtab)
+        elif self.curtab in self.cameraheaders:
+            self.on_enter_camera(self.curtab)
 
     def on_enter_sending(self, qrcodeheader):
         self.interval = Clock.schedule_interval(self.on_update_sending, float(self.config.get('settings', 'duration')) / 1000)
     def on_leave_sending(self, qrcodeheader):
         self.interval.cancel()
     def on_update_sending(self, clock):
-        if self.iterdata is None:
+        if self.readiter is None:
             return
         count = 3 if self.config.getint('settings', 'multicolor') else 1
         datas = []
         for index in range(count):
             try:
-                data = next(self.iterdata)
+                data = next(self.readiter)
             except StopIteration:
-                self.iterdata = iter(self.data)
-                data = next(self.iterdata)
+                self.readiter = iter(self.readdata)
+                data = next(self.readiter)
             if self.config.getint('settings', 'base64'):
                 data = base64.b64encode(data)
             datas.append(data)
@@ -343,12 +362,35 @@ class TXQRApp(App):
         camera = cameraheader.content
         camera._camera.unbind(on_texture = self.on_update_camera)
         camera.play = False
+        self.writefile.close()
+        self.writefile = None
+        print('Closed', self.writename)
 
     def on_update_camera(self, _camera):
         image = PIL.Image.frombytes('RGBA', _camera.texture.size, _camera.texture.pixels)
         codes = zbarlight.scan_codes(['qrcode'], image)
-        # todo: display datarate or something
-        print(codes)
+
+        if len(codes) == 0:
+            return
+
+        if self.writefile is None:
+            name = 'txqrapp_' + str(datetime.datetime.now()).replace(' ','_')
+            if self.config.getint('settings', 'base64'):
+                name += '_b64decode'
+            name += '.dat'
+            name = os.path.join(self.filechooser.path, name)
+            self.writename = name
+            self.writefile = open(name, 'wb')
+            print('Opened', self.writename)
+
+        # todo: display datarate or something in gui
+        length = 0
+        for data in codes:
+            if self.config.getint('settings', 'base64'):
+                data = base64.b64decode(data)
+            length += len(data)
+            self.writefile.write(data)
+        print(length)
         #for bytes in codes:
         
 
