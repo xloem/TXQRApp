@@ -80,7 +80,7 @@ class QRCode(Image):
         outersize = size + self.borderwidth * 2
         if outersize >= self.rectangle.texture.width:
             texsize = 1 << (int(outersize) - 1).bit_length()
-            self.rectangle.texture = Texture.create(size=(texsize,texsize))
+            self.rectangle.texture = Texture.create(size=(texsize,texsize), colorfmt='rgb')
         #self.rectangle.texture.blit_buffer(sizepixels[0][1], size=sizepixels[0][0])
         #return
         newpixels = bytearray(b'\xff\xff\xff') * outersize*outersize
