@@ -357,6 +357,7 @@ class TXQRApp(App):
             self.tabbedpanel.clear_widgets = restore_clear_widgets
         else:
             cameraheader.content.play = True
+        print(cameraheader.content.index, cameraheader.content._camera)
         cameraheader.content._camera.bind(on_texture = self.on_update_camera)
     def on_leave_camera(self, cameraheader):
         camera = cameraheader.content
