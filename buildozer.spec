@@ -4,20 +4,20 @@ package.name = txqrapp
 package.domain = xloem.github.com
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
-version = 0.1.3
-requirements = python3,kivy,pyzint,zbarlight,pillow,QRStreamer,lt-code
+version = 0.1.5
+requirements = android,python3,kivy,pyzint,zbarlight,pillow,QRStreamer,lt-code
 orientation = portrait
 osx.python_version = 3
 osx.kivy_version = 1.9.1
 fullscreen = 1
-android.permission = CAMERA
+android.permissions = CAMERA
 android.arch = armeabi-v7a
 ios.kivy_ios_url = https://github.com/kivy/kivy-ios
 ios.kivy_ios_branch = master
 ios.ios_deploy_url = https://github.com/phonegap/ios-deploy
 ios.ios_deploy_branch = 1.7.0
 p4a.fork = xloem
-p4a.branch = recipe-pyzint-fork
+p4a.branch = recipe-pyzint
 
 [buildozer]
 log_level = 2

@@ -13,6 +13,8 @@ from kivy.graphics.transformation import Matrix
 
 from kivy.properties import ObjectProperty, ListProperty, BoundedNumericProperty, StringProperty
 
+from kivy.utils import platform
+
 from kivy.uix.camera import Camera
 from kivy.uix.filechooser import FileChooserListView as FileChooser
 from kivy.uix.image import Image
@@ -342,6 +344,7 @@ class TXQRApp(App):
             # begin reading from the user's hardware in the constructor,
             # and they might not be planning to use it
 
+            self.ensure_permission('CAMERA')
             cameraheader.content = Camera(index = index, play = True)
 
             # this hack works around a control flow issue with adding
@@ -412,10 +415,15 @@ class TXQRApp(App):
                 self.writefile.write(data)
             length += len(data)
         print(length)
-        #for bytes in codes:
-        
 
-            # zbarlight
+    def ensure_permission(self, permission):
+        if platform != 'android':
+            return
+        from android.permissions import check_permission, request_permission, Permission
+        permission = getattr(Permission, permission)
+        if check_permission(permission):
+            return True
+        return request_permission(permission)
 
 if __name__ == '__main__':
     app = TXQRApp()
