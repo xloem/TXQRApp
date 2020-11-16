@@ -198,7 +198,7 @@ class TXQRApp(App):
             },{
                 "type": "options",
                 "title": "Imagery",
-                "desc": "What kind of 2D barcodes to display",
+                "desc": "What kind of 2D barcodes to display (AZTEC decoding not supported)",
                 "section": "settings",
                 "key": "imagery",
                 "options": ["QRCODE", "AZTEC"]
@@ -362,15 +362,19 @@ class TXQRApp(App):
         camera = cameraheader.content
         camera._camera.unbind(on_texture = self.on_update_camera)
         camera.play = False
-        self.writefile.close()
-        self.writefile = None
+        if self.writefile is not None:
+            if self.ltdecoder is not None:
+                # todo: store partial state
+                self.ltdecoder.stream_dump(self.writefile)
+            self.writefile.close()
+            self.writefile = None
         print('Closed', self.writename)
 
     def on_update_camera(self, _camera):
         image = PIL.Image.frombytes('RGBA', _camera.texture.size, _camera.texture.pixels)
         codes = zbarlight.scan_codes(['qrcode'], image)
 
-        if len(codes) == 0:
+        if codes is None:
             return
 
         if self.writefile is None:
@@ -382,14 +386,31 @@ class TXQRApp(App):
             self.writename = name
             self.writefile = open(name, 'wb')
             print('Opened', self.writename)
+            coding = self.config.get('settings', 'coding')
+            if coding == 'LT-code':
+                self.ltdecoder = lt.decode.LtDecoder()
+            else:
+                self.ltdecoder = None
 
         # todo: display datarate or something in gui
         length = 0
         for data in codes:
             if self.config.getint('settings', 'base64'):
                 data = base64.b64decode(data)
+            if self.ltdecoder is not None:
+                self.ltdecoder.consume_block(lt.decode.block_from_bytes(data))
+                if self.ltdecoder.is_done():
+                    print('lt done')
+                    self.tabbedpanel.switch_to(self.filechooserheader)
+                    self.filechooser._update_files()
+                    self.filechooser.selection = [self.writename]
+                    self.filechooser.layout.ids.scrollview.scroll_y = 0
+                    return
+                else:
+                    print('not done yet')
+            else:
+                self.writefile.write(data)
             length += len(data)
-            self.writefile.write(data)
         print(length)
         #for bytes in codes:
         
