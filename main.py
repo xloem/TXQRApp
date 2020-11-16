@@ -14,7 +14,7 @@ from kivy.properties import ObjectProperty, ListProperty, BoundedNumericProperty
 
 from kivy.uix.button import Button
 
-from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.pagelayout import PageLayout
 from kivy.uix.camera import Camera
 from kivy.uix.filechooser import FileChooserListView as FileChooser
 from kivy.uix.image import Image
@@ -134,45 +134,52 @@ class QRCode(Image):
 
 class TXQRApp(App):
     def build(self):
-        parent = BoxLayout(orientation = 'vertical')
+        pagelayout = PageLayout()#orientation = 'vertical')
 
         self.duration = 300
         self.blocksize = 512
         self.extra = 10
         self.error = 2
         self.base64 = True
-        self.multicolor = True
+        self.multicolor = False
+
+        self.filechooser = FileChooser(path = os.path.abspath('.'), on_submit = self.on_file_submit)
+        pagelayout.add_widget(self.filechooser)
 
         self.interval = Clock.schedule_interval(self.on_interval, self.duration / 1000)
 
         self.qrwidget = QRCode()
-        parent.add_widget(self.qrwidget)
-        parent.add_widget(Button())
-        self.filechooser = FileChooser(path = os.path.abspath('.'), on_submit = self.on_file_submit)
-        parent.add_widget(self.filechooser)
+        pagelayout.add_widget(self.qrwidget)
+        #pagelayout.add_widget(Button())
 
         self.iterdata = None
 
+        self.pagelayout = pagelayout
 
-        return parent
+        return pagelayout
 
     def on_file_submit(self, chooser, selection, touch):
         with open(selection[0], 'rb') as file:
             data, score, compressed, compressed_data = fountaincoding.encode_and_compress(file, self.blocksize, extra = math.floor(self.extra))
         self.data = data
         self.iterdata = iter(data)
+        self.pagelayout.page = 1
 
     def on_interval(self, clock):
         if self.iterdata is None:
             return
-        try:
-            data = next(self.iterdata)
-        except StopIteration:
-            self.iterdata = iter(self.data)
-            data = next(self.iterdata)
-        if self.base64:
-            data = base64.b64encode(data)
-        self.qrwidget.data = [data]
+        count = 3 if self.multicolor else 1
+        datas = []
+        for index in range(count):
+            try:
+                data = next(self.iterdata)
+            except StopIteration:
+                self.iterdata = iter(self.data)
+                data = next(self.iterdata)
+            if self.base64:
+                data = base64.b64encode(data)
+            datas.append(data)
+        self.qrwidget.data = datas
 
 if __name__ == '__main__':
     app = TXQRApp()
