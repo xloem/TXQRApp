@@ -13,11 +13,11 @@ from kivy.graphics.transformation import Matrix
 
 from kivy.properties import ObjectProperty, ListProperty, BoundedNumericProperty, StringProperty
 
-from kivy.uix.pagelayout import PageLayout
 from kivy.uix.camera import Camera
 from kivy.uix.filechooser import FileChooserListView as FileChooser
 from kivy.uix.image import Image
 from kivy.uix.settings import SettingsWithNoMenu as Settings
+from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelHeader
 from kivy.uix.widget import Widget
 
 import base64
@@ -218,18 +218,22 @@ class TXQRApp(App):
 
     def build(self):
 
-        pagelayout = PageLayout()#orientation = 'vertical')
+        tabbedpanel = TabbedPanel(do_default_tab = False)
+        tabbedpanel.bind(current_tab = self.on_current_tab)
+        self.lasttab = None
 
         self.filechooser = FileChooser(path = os.path.abspath('.'), on_submit = self.on_file_submit)
-        pagelayout.add_widget(self.filechooser)
+        self.filechooserheader = TabbedPanelHeader(text = 'Select file', content = self.filechooser)
+        
+        tabbedpanel.add_widget(self.filechooserheader)
 
         self.qrwidget = QRCode()
-        pagelayout.add_widget(self.qrwidget)
         self.qrwidget.borderwidth = self.config.getint('settings', 'borderwidth')
         self.on_config_change(self.config, 'settings', 'error', self.config.get('settings', 'error'))
         self.qrwidget.imagery = self.config.get('settings', 'imagery')
+        self.qrwidgetheader = TabbedPanelHeader(text = 'Sending', content = self.qrwidget)
+        tabbedpanel.add_widget(self.qrwidgetheader)
 
-        self.interval = Clock.schedule_interval(self.on_interval, float(self.config.get('settings', 'duration')) / 1000)
         self.iterdata = None
 
         #self.camera = Camera(index=1)
@@ -237,9 +241,9 @@ class TXQRApp(App):
         #self.camera._camera.widget = self.camera
         #pagelayout.add_widget(self.camera)
 
-        self.pagelayout = pagelayout
+        self.tabbedpanel = tabbedpanel
 
-        return pagelayout
+        return tabbedpanel
 
     def on_file_submit(self, chooser, selection, touch):
         if len(selection) == 0:
@@ -261,7 +265,7 @@ class TXQRApp(App):
 
         self.data = data
         self.iterdata = iter(data)
-        self.pagelayout.page = 1
+        self.tabbedpanel.switch_to(self.qrwidgetheader)
 
     def on_config_change(self, config, section, key, value):
         if key == 'borderwidth':
@@ -270,14 +274,22 @@ class TXQRApp(App):
             self.qrwidget.error = float(value[:value.find('%')])/100
         elif key == 'imagery':
             self.qrwidget.imagery = value
-        elif key == 'duration':
-            self.interval.cancel()
-            self.interval = Clock.schedule_interval(self.on_interval, float(value) / 1000)
         elif key == 'coding':
             self.on_file_submit(self.filechooser, self.filechooser.selection, None)
 
+    def on_current_tab(self, panel, header):
+        print('ON_CURRENT_TAB')
+        if self.lasttab is self.qrwidgetheader:
+            self.on_leave_sending(header)
+        self.lasttab = header
+        if self.lasttab is self.qrwidgetheader:
+            self.on_enter_sending(header)
 
-    def on_interval(self, clock):
+    def on_enter_sending(self, header):
+        self.interval = Clock.schedule_interval(self.on_update_sending, float(self.config.get('settings', 'duration')) / 1000)
+    def on_leave_sending(self, header):
+        self.interval.cancel()
+    def on_update_sending(self, clock):
         if self.iterdata is None:
             return
         count = 3 if self.config.getint('settings', 'multicolor') else 1
@@ -296,7 +308,7 @@ class TXQRApp(App):
     def on_camtexture(self, camera):
         image = PIL.Image.frombytes('RGBA', camera.texture.size, camera.texture.pixels)
         codes = zbarlight.scan_codes(['qrcode'], image)
-        print(codes)
+        #for bytes in codes:
         
 
             # zbarlight
