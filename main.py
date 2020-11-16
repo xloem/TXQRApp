@@ -13,7 +13,8 @@ from kivy.graphics.transformation import Matrix
 
 from kivy.properties import ObjectProperty, ListProperty, BoundedNumericProperty, StringProperty
 
-from kivy.uix.camera import Camera
+#from kivy.uix.camera import Camera
+from cameradbg import Camera
 from kivy.uix.filechooser import FileChooserListView as FileChooser
 from kivy.uix.image import Image
 from kivy.uix.settings import SettingsWithNoMenu
