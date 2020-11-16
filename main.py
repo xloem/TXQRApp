@@ -27,6 +27,8 @@ import math
 import os
 import random
 import pyzint
+import zbarlight
+import PIL.Image
 
 class QRCode(Image):
     data = ListProperty()
@@ -220,14 +222,17 @@ class TXQRApp(App):
 
         self.qrwidget = QRCode()
         pagelayout.add_widget(self.qrwidget)
-
         self.qrwidget.borderwidth = self.config.getint('settings', 'borderwidth')
         self.on_config_change(self.config, 'settings', 'error', self.config.get('settings', 'error'))
         self.qrwidget.codestandard = self.config.get('settings', 'codestandard')
 
         self.interval = Clock.schedule_interval(self.on_interval, float(self.config.get('settings', 'duration')) / 1000)
-
         self.iterdata = None
+
+        #self.camera = Camera(index=1)
+        #self.camera._camera.bind(on_texture = self.on_camtexture)
+        #self.camera._camera.widget = self.camera
+        #pagelayout.add_widget(self.camera)
 
         self.pagelayout = pagelayout
 
@@ -273,6 +278,14 @@ class TXQRApp(App):
                 data = base64.b64encode(data)
             datas.append(data)
         self.qrwidget.data = datas
+
+    def on_camtexture(self, camera):
+        image = PIL.Image.frombytes('RGBA', camera.texture.size, camera.texture.pixels)
+        codes = zbarlight.scan_codes(['qrcode'], image)
+        print(codes)
+        
+
+            # zbarlight
 
 if __name__ == '__main__':
     app = TXQRApp()
