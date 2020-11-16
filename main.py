@@ -347,7 +347,7 @@ class TXQRApp(App):
 
             print('CAMERA PERMISSION')
             self.ensure_permission('CAMERA')
-            peinr('CAMERA CONSTRUCTION')
+            print('CAMERA CONSTRUCTION')
             cameraheader.content = Camera(index = index, play = True)
 
             # this hack works around a control flow issue with adding
