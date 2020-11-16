@@ -11,7 +11,7 @@ from kivy.graphics import Color, Scale, Rectangle, PushMatrix, PopMatrix, Transl
 from kivy.graphics.texture import Texture
 from kivy.graphics.transformation import Matrix
 
-from kivy.properties import ObjectProperty, ListProperty, BoundedNumericProperty
+from kivy.properties import ObjectProperty, ListProperty, BoundedNumericProperty, StringProperty
 
 from kivy.uix.pagelayout import PageLayout
 from kivy.uix.camera import Camera
@@ -32,6 +32,7 @@ class QRCode(Image):
     data = ListProperty()
     error = BoundedNumericProperty(0.5, min=0, max=1)
     borderwidth = BoundedNumericProperty(10, min=0)
+    codestandard = StringProperty('QRCODE')
 
     def __init__(self, *args, **kwargs):
         #self.gfxtranslate = Translate()
@@ -70,7 +71,8 @@ class QRCode(Image):
         # TODO: provide interface settings of barcode, bordersize etc
 
         # borderwidth doesn't seem to do anything?  so we do borders manually
-        barcodes = (pyzint.Barcode.QRCODE(data, option_1 = int(self.error * 4 + 1)) for data in data)
+        Barcode = getattr(pyzint.Barcode, self.codestandard)
+        barcodes = (Barcode(data, option_1 = int(self.error * 4 + 1)) for data in data)
 
         images = (CoreImage(io.BytesIO(barcode.render_bmp()), ext='bmp') for barcode in barcodes)
         sizepixels = [(image.texture.size, image.texture.pixels) for image in images]
@@ -142,6 +144,7 @@ class TXQRApp(App):
             'duration': 300,
             'error': '33%',
             'base64': 1,
+            'codestandard': 'QRCODE',
             'multicolor': 0,
             'fountaincoding': 1,
             'extra': 10
@@ -184,9 +187,16 @@ class TXQRApp(App):
             },{
                 "type": "bool",
                 "title": "Multicolor",
-                "desc": "Whether to display 3-channel colored QRs",
+                "desc": "Whether to display 3-channel colored images",
                 "section": "settings",
                 "key": "multicolor"
+            },{
+                "type": "options",
+                "title": "Code Standard",
+                "desc": "What kind of 2D barcodes to display",
+                "section": "settings",
+                "key": "codestandard",
+                "options": ["QRCODE", "AZTEC"]
             },{
                 "type": "bool",
                 "title": "Fountain Coding",
@@ -210,6 +220,10 @@ class TXQRApp(App):
 
         self.qrwidget = QRCode()
         pagelayout.add_widget(self.qrwidget)
+
+        self.qrwidget.borderwidth = self.config.getint('settings', 'borderwidth')
+        self.on_config_change(self.config, 'settings', 'error', self.config.get('settings', 'error'))
+        self.qrwidget.codestandard = self.config.get('settings', 'codestandard')
 
         self.interval = Clock.schedule_interval(self.on_interval, float(self.config.get('settings', 'duration')) / 1000)
 
@@ -235,9 +249,11 @@ class TXQRApp(App):
 
     def on_config_change(self, config, section, key, value):
         if key == 'borderwidth':
-            self.qrcode.borderwidth = int(value)
+            self.qrwidget.borderwidth = int(value)
         elif key == 'error':
-            self.qrcode.error = float(value[:value.find('%')])/100
+            self.qrwidget.error = float(value[:value.find('%')])/100
+        elif key == 'codestandard':
+            self.qrwidget.codestandard = value
         elif key == 'duration':
             self.interval.cancel()
             self.interval = Clock.schedule_interval(self.on_interval, float(value) / 1000)
