@@ -257,7 +257,7 @@ warn_on_root = 1
 # build_dir = ./.buildozer
 
 # (str) Path to build output (i.e. .apk, .ipa) storage
-bin_dir = ../bin
+#bin_dir = ../bin
 
 #    -----------------------------------------------------------------------------
 #    List as sections
