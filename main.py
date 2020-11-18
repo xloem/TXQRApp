@@ -345,7 +345,9 @@ class TXQRApp(App):
             # and they might not be planning to use it
 
             self.ensure_permission('CAMERA')
-            cameraheader.content = Camera(index = index, play = True)
+            # TODO: android only wants one camera object, whereas desktop seems to prefer separate ones.
+            #       probably prioritise android, as desktop usually has only 1 camera
+            cameraheader.content = Camera(index = index, resolution = (960, 720), play = True)
 
             # this hack works around a control flow issue with adding
             # a widget inside the on_content event handler, where it
@@ -371,7 +373,7 @@ class TXQRApp(App):
                 self.ltdecoder.stream_dump(self.writefile)
             self.writefile.close()
             self.writefile = None
-        print('Closed', self.writename)
+            print('Closed', self.writename)
 
     def on_update_camera(self, _camera):
         image = PIL.Image.frombytes('RGBA', _camera.texture.size, _camera.texture.pixels)
