@@ -8,13 +8,9 @@ from kivy.utils import platform
 
 class TXQRApp(App):
     def build(self):
-        print('platform', platform)
         if platform == 'android':
-            print('checking')
-            from android.permissions import request_permission, Permission, check_permission
-            if not check_permission(Permission.CAMERA):
-                print('spawning request')
-                print(request_permission(Permission.CAMERA))
+            from android.permissions import request_permissions, Permission
+            print(request_permissions([Permission.CAMERA]))
         Camera(index = 0, play = True)
 
 if __name__ == '__main__':
