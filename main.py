@@ -10,9 +10,11 @@ class TXQRApp(App):
     def build(self):
         print('platform', platform)
         if platform == 'android':
-            print('spawning request')
-            from android.permissions import request_permissions, Permission
-            print(request_permissions([Permission.CAMERA]))
+            print('checking')
+            from android.permissions import request_permission, Permission, check_permission
+            if not check_permission(Permission.CAMERA):
+                print('spawning request')
+                print(request_permission(Permission.CAMERA))
         Camera(index = 0, play = True)
 
 if __name__ == '__main__':
