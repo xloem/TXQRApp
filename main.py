@@ -1,54 +1,20 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
-from kivy.logger import Logger
-import logging
-Logger.setLevel(logging.TRACE)
+#!/usr/bin/env python3
 
 from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
 
-from kivy.lang import Builder
+#from kivy.uix.camera import Camera
+from cameradbg import Camera
+from kivy.utils import platform
 
-from android.permissions import request_permission, Permission, check_permission
-
-Builder.load_string('''
-<CameraClick>:
-    orientation: 'vertical'
-    Camera:
-        id: camera
-        resolution: (1280, 960)
-        play: False
-        keep_ratio: True
-        allow_stretch: True
-        canvas.before:  
-            PushMatrix
-            Rotate:
-                angle: -90
-                origin: self.center
-        canvas.after:
-            PopMatrix
-    ToggleButton:
-        text: 'Camera On'
-        on_press: camera.play = not camera.play
-        size_hint_y: None
-        height: '96dp'
-        state: 'down'
-''')
-
-
-class CameraClick(BoxLayout):
-    pass
-
-class TestCamera(App):
+class TXQRApp(App):
     def build(self):
-        if not check_permission(Permission.CAMERA):
-            print('Permission for Camera not accepted, will request now')
-            request_permission(Permission.CAMERA)
-        else:
-            print('Permission OK')
-        return CameraClick()
-
+        print('platform', platform)
+        if platform == 'android':
+            print('spawning request')
+            from android.permissions import request_permissions, Permission
+            print(request_permissions([Permission.CAMERA]))
+        Camera(index = 0, play = True)
 
 if __name__ == '__main__':
-    TestCamera().run()
+    app = TXQRApp()
+    app.run()
