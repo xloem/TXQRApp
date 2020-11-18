@@ -428,8 +428,6 @@ class TXQRApp(App):
             return
         from android.permissions import request_permissions, Permission
         print('REQUESTING PERMISSION')
-        request_permissions([Permission.CAMERA])
-        request_permissions(Permission.CAMERA)
         return request_permissions([getattr(Permission, permission) for permission in permissions])
 
 if __name__ == '__main__':
