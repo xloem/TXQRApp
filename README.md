@@ -1,6 +1,6 @@
 # TXQRApp
 
-Send and receive information with barcodes.  This app may not be secure.
+Send and receive information with barcodes.  OCR is preferred to QR transmission because a human can review the data for obvious decoder exploits.  This app may not be secure.
 
 Information flows in and out using barcodes.  The information passes through many libraries:
 
