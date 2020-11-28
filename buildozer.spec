@@ -5,7 +5,7 @@ package.domain = xloem.github.com
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
 version = 0.1.5
-requirements = android,python3,kivy,pyzint,zbarlight,pillow,QRStreamer,lt-code
+requirements = android,python3,kivy,pyzint,zbarlight,pillow,QRStreamer,lt-code,tesserocr
 orientation = portrait
 osx.python_version = 3
 osx.kivy_version = 1.9.1
@@ -17,7 +17,7 @@ ios.kivy_ios_branch = master
 ios.ios_deploy_url = https://github.com/phonegap/ios-deploy
 ios.ios_deploy_branch = 1.7.0
 p4a.fork = xloem
-p4a.branch = recipe-pyzint
+p4a.branch = recipes
 
 [buildozer]
 log_level = 2
