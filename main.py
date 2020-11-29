@@ -154,13 +154,28 @@ class TXQRApp(App):
             'imagery': 'QRCODE',
             'multicolor': 0,
             'coding': 'TXQR-Android',
-            'extra': 10
+            'extra': 10,
+            'detection': 'QRCODE'
         })
         # todo: organize config and settings entries to be in the same order, for clarity
         
     def build_settings(self, settings):
         settings.add_json_panel('Coding Settings', self.config, data = 
-            """[{
+            # output
+            """[
+            {
+                "type": "title",
+                "title": "General Output"
+            },{
+                "type": "bool",
+                "title": "Base64",
+                "desc": "Whether to base64 encode the data as TXQR does",
+                "section": "settings",
+                "key": "base64"
+            },{
+                "type": "title",
+                "title": "Barcode Output"
+            },{
                 "type": "numeric",
                 "title": "Chunk Size",
                 "desc": "Size of chunks data is broken into",
@@ -187,12 +202,6 @@ class TXQRApp(App):
                 "options": ["0%", "33%", "66%", "100%"]
             },{
                 "type": "bool",
-                "title": "Base64",
-                "desc": "Whether to base64 encode the data as TXQR does",
-                "section": "settings",
-                "key": "base64"
-            },{
-                "type": "bool",
                 "title": "Multicolor",
                 "desc": "Whether to display 3-channel colored images (no decoding support)",
                 "section": "settings",
@@ -213,10 +222,20 @@ class TXQRApp(App):
                 "options": ["QRStreamRaw", "TXQR-Android", "LT-code"]
             },{
                 "type": "numeric",
-                "title": "Extra",
-                "desc": "The number of extra QR codes to generate",
+                "title": "TXQR Extra",
+                "desc": "The number of extra QR codes to generate for TXQR-Android",
                 "section": "settings",
                 "key": "extra"
+            },{
+                "type": "title",
+                "title": "Input"
+            },{
+                "type": "options",
+                "title": "Detection",
+                "desc": "What kind of data to detect",
+                "section": "settings",
+                "key": "detection",
+                "options": ["QRCODE", "OCR"]
             }]""")
         self.settingsheader.content = settings
 
