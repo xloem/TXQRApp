@@ -226,7 +226,7 @@ android.permissions = CAMERA
 android.arch = armeabi-v7a
 
 # (int) overrides automatic versionCode computation (used in build.gradle)
-android.numeric_version = 000108
+android.numeric_version = 1000108
 
 # (bool) enables Android auto backup feature (Android API >=23)
 android.allow_backup = True
