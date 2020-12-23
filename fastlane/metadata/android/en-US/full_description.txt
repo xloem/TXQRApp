@@ -1,0 +1,19 @@
+Barebones visual data communication via QR codes, written in Kivy Python, which
+is theoretically cross platform to iOS and desktop.
+
+This is a quick start at an easy successor to QRStream, inspired by comments on
+its issues pages.  DEVELOPMENT AND MAINTENANCE HELP NEEDED.  The developer is
+struggling with a degenerative brain disease.  The app tries to convert files
+to and from barcode videos.  It has not been tested much, yet.
+
+This is obviously not a secure solution to communication on its own.  The
+encoding/decoding libraries may have many bugs, and using QR codes instead of
+OCR scanning means it is easier to hide malicious data in the transmission
+without you noticing.  Your android device likely also has multiple radios and
+such, that can surreptitiously transfer data with electronic devices via
+electromagnetic coupling, severely weakening your airgap unless removed.  There
+are also many other known ways to transfer malicious data across an airgap,
+including audio, temperature fluctuations, and reappropriating parts of the
+device wiring as more ad-hoc antennae.  Your chips have backdoors, technology
+has shifted to ML, etc etc etc.  Meanwhile, many people may have no clue how to
+make use of any of that stuff, even many fancy secret agent types.

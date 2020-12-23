@@ -1,0 +1,1 @@
+Send and receive documents with your phone's camera.  Successor to QRStream.

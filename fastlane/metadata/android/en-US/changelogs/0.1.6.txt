@@ -1,0 +1,131 @@
+commit 8ec008872469253f75fd2e3819a009ab17d531a8
+Author: 0xloem <0xloem@gmail.com>
+Date:   Wed Nov 18 15:16:50 2020 +0000
+
+    0.1.6 barebones camera display on android
+
+commit 8f69eeda5df83835f29c49f8f244b0e182e4a1d4
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Mon Nov 16 09:50:28 2020 -0500
+
+    android permission fix and changes from during finding it
+
+commit 49832caab847232b1feb5c0b459974c0440de405
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Mon Nov 16 09:41:44 2020 -0500
+
+    README
+
+commit 8103d79c047b10f7af61d5db8ab5dfabc01c77cb
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Mon Nov 16 09:37:19 2020 -0500
+
+    decoding work
+
+commit 82fd87bbe63551a726f8710452b80df1e10d05c9
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Mon Nov 16 08:47:21 2020 -0500
+
+    basic interface
+
+commit f63a651e1826c394604e2aa616326c9fd2d69dc2
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Mon Nov 16 08:00:53 2020 -0500
+
+    qrcodes parsed from camera
+
+commit 4079d467291229a281e02fefc637c4de4495e142
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Mon Nov 16 07:02:49 2020 -0500
+
+    switched to tabbed layout
+
+commit 51b3d8a71032d99f0bf3a8f35260573e1b4ba8a4
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Mon Nov 16 06:18:54 2020 -0500
+
+    add generation of lt-code imagery
+
+commit 7c9ba17032f005ec138332026eaadd841bbb6c45
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Mon Nov 16 06:03:42 2020 -0500
+
+    added stub for camera
+
+commit b60f17a2eebc01da974ad81e5726fc1d61b90901
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Mon Nov 16 05:44:49 2020 -0500
+
+    fix texture blitting for android
+
+commit 323663efcb2b9dc5cc56f451833504b60f04ed2e
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Sun Nov 15 21:21:54 2020 -0500
+
+    added aztec code support, and fixed some config loading issues
+
+commit 5154d4725319c2d11067902be4abef2f9e06095d
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Sun Nov 15 20:49:23 2020 -0500
+
+    fix issue with not wiping backgorund, causing display glitches
+
+commit 5f79a608e57186fc7ff4cb92d5ba806a65af004d
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Sun Nov 15 20:40:27 2020 -0500
+
+    add settings panel accessible with f1 or a settings button; there is a bug where some qrcodes are displayed wrongly
+
+commit 5e4c0c2357253f5aff34e3b49979cd9361e4c507
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Sun Nov 15 19:08:37 2020 -0500
+
+    add ssh to ci
+
+commit 78a7a7384268f1fa1a4f636fb72308cf86ee05ea
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Sun Nov 15 19:05:17 2020 -0500
+
+    use a pagelayout to switch between file selector and animated qr code
+
+commit e6b5f75caf27ca1f323b8d333b82199bb8f886e9
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Sun Nov 15 18:20:37 2020 -0500
+
+    referenced patched pyzint
+
+commit 8f1670f344aea01d52adae8d7cc346ddba153016
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Sun Nov 15 16:46:30 2020 -0500
+
+    whew ... basics working with pyzint, but requires patch to pyzint to remove size check
+
+commit 6c06a91bdd25022d4520535ff781aea5733a0c0e
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Sun Nov 15 09:20:36 2020 -0500
+
+    fix qr wip compile errors
+
+commit f6e61f27baa030628ee0ccd737344eb41f3bbc2c
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Sun Nov 15 06:54:36 2020 -0500
+
+    add missing pyzint requirement
+
+commit 317e24a144e3d9f134e6a45e98001fbc842da55e
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Sun Nov 15 06:49:25 2020 -0500
+
+    ci
+
+commit 6d7afe2899ed1a10a2d2646bd510cf671d5bfe1b
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Sun Nov 15 06:48:54 2020 -0500
+
+    working on a pyzint recipe
+
+commit f192a6b8371bafc3bbdb92a42fa7a7692ce4d718
+Author: Karl Semich <0xloem@gmail.com>
+Date:   Sat Nov 14 20:57:29 2020 -0500
+
+    i made a basic app to generate txqr streams, but the qrcode library is too slow.

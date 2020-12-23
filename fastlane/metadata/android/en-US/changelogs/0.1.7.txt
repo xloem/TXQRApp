@@ -1,0 +1,11 @@
+commit 9423fa58fc26e7b2cad7e2d0318f2cefbfc6e962
+Author: 0xloem <0xloem@gmail.com>
+Date:   Sat Nov 28 19:52:22 2020 -0500
+
+    Tagging 0.1.7 since 0.1.6 has the wrong version in the buildozer spec file
+
+commit 24bb33315056b710dd9ce72ac65c01511757576b
+Author: xloem <0xloem@gmail.com>
+Date:   Sat Nov 28 04:24:13 2020 -0500
+
+    Update README.md
