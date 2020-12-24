@@ -28,12 +28,14 @@ import io
 import math
 import os
 import random
+import threading
 
 import fountaincoding
 import lt
 import PIL.Image
 import pyzint
 import zbarlight
+import tesserocr
 
 class QRCode(Image):
     data = ListProperty()
@@ -141,6 +143,55 @@ class QRCode(Image):
         #            Color(*values)
         #            Rectangle(pos=(r,c), size=(1,1))
         #    PopMatrix()
+
+class OCR(threading.Thread):
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._condition = threading.Condition(self._lock)
+        self._queued = []
+        self._done = []
+        self._stopped = False
+        self._tesseract = tesserocr.PyTessBaseAPI()
+        self.start()
+    def stop(self):
+        with self._lock:
+            self._stopped = True
+            self._condition.notify()
+        self.join()
+        self._tesseract.End()
+    def provide(self, texture):
+        with self._lock:
+            if len(self._queued) == 0:
+                self._queued.append(data)
+                self._condition.notify()
+            else:
+                self._queued[0] = texture
+    def release(self):
+        with self._lock:
+            if not len(self._done):
+                return None
+            else:
+                return self._done.pop()
+    def run(self):
+        text = None
+        while True:
+            with self._lock:
+                if text is not None:
+                    self._done.insert(0, text)
+                    text = None
+                self._condition.wait_for(lambda: len(self._queued) > 0 or self._stopped)
+                if self._stopped and len(self._queued) == 0:
+                    break
+                texture = self._queued.pop()
+            dims = texture.size[0]
+
+            # for more control, use SetImage, Recognize, and Get*Text
+
+            #                             raw str data, Bpp, stride,          rect
+            text = self._tesseract.TesseractRect(texture.pixels, 4, dims[0] * 4,  0, 0, dims[0], dims[1])
+            print(text)
+
+
 
 class TXQRApp(App):
 
@@ -363,7 +414,9 @@ class TXQRApp(App):
             # begin reading from the user's hardware in the constructor,
             # and they might not be planning to use it
 
-            self.ensure_permission('CAMERA')
+            if not self.ensure_permission('CAMERA'):
+                return self.tabbedpanel.switch_to(self.settingsheader)
+
             # TODO: android only wants one camera object, whereas desktop seems to prefer separate ones.
             #       probably prioritise android, as desktop usually has only 1 camera
             cameraheader.content = Camera(index = index, resolution = (960, 720), play = True)
@@ -382,10 +435,17 @@ class TXQRApp(App):
         else:
             cameraheader.content.play = True
         cameraheader.content._camera.bind(on_texture = self.on_update_camera)
+        detection = self.config.get('settings', 'detection')
+        if detection == 'OCR':
+            self.ocr = OCR()
     def on_leave_camera(self, cameraheader):
+        detection = self.config.get('settings', 'detection')
+        if detection == 'OCR':
+            self.ocr.stop()
         camera = cameraheader.content
-        camera._camera.unbind(on_texture = self.on_update_camera)
-        camera.play = False
+        if camera is not None:
+            camera._camera.unbind(on_texture = self.on_update_camera)
+            camera.play = False
         if self.writefile is not None:
             if self.ltdecoder is not None:
                 # todo: store partial state
@@ -395,8 +455,13 @@ class TXQRApp(App):
             print('Closed', self.writename)
 
     def on_update_camera(self, _camera):
-        image = PIL.Image.frombytes('RGBA', _camera.texture.size, _camera.texture.pixels)
-        codes = zbarlight.scan_codes(['qrcode'], image)
+        detection = self.config.get('settings', 'detection')
+        if detection == 'QRCODE':
+            image = PIL.Image.frombytes('RGBA', _camera.texture.size, _camera.texture.pixels)
+            codes = zbarlight.scan_codes(['qrcode'], image)
+        elif detection == 'OCR':
+            self.ocr.provide(_camera.texture)
+            codes = self.ocr.release()
 
         if codes is None:
             return
